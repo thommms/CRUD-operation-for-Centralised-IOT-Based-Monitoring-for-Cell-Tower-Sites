@@ -42,6 +42,9 @@ class UserSchema(SQLAlchemySchema):
     Created_at = fields.String(required=True)
     Updated_at = fields.String(required=True)
 
+@app.route('/')
+def test():
+    return "Testing user app"
 
 @app.route('/api/v1/user', methods=['GET'])
 def index():
