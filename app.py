@@ -35,6 +35,9 @@ class TodoSchema(SQLAlchemySchema):
     title = fields.String(required=True)
     todo_description = fields.String(required=True)
 
+@app.route('/')
+def hello():
+    return "Hello people!"
 
 @app.route('/api/v1/todo', methods=['GET'])
 def index():
