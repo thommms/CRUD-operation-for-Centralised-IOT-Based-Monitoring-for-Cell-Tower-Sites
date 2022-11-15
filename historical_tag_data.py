@@ -3,11 +3,12 @@ from flask_sqlalchemy import SQLAlchemy
 from marshmallow import fields
 import marshmallow as mm
 from marshmallow_sqlalchemy import SQLAlchemySchema, auto_field
-import logging as logger
+from sqlalchemy import text
+
 
 app = Flask(__name__)
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password@localhost:3306/cellMonitorDB'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://sql9565036:TijEKrD4Bl@sql9.freemysqlhosting.net:3306/sql9565036'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password@localhost:3306/cellMonitorDB'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://sql9565036:TijEKrD4Bl@sql9.freemysqlhosting.net:3306/sql9565036'
 db = SQLAlchemy(app)
 
 # Model
@@ -21,7 +22,7 @@ class HistoricalData(db.Model):
     Input_voltage = db.Column(db.String(30))
     Diesel_level = db.Column(db.String(30))
     Intrusion = db.Column(db.String(30))
-    Timestamp = db.Column(db.String(30))
+    Timestamp = db.Column(db.DateTime, index=True)
     Created_at = db.Column(db.String(30))
     Updated_at = db.Column(db.String(30))
 
@@ -54,7 +55,7 @@ class HistoricalDataSchema(SQLAlchemySchema):
     Input_voltage = fields.String(required=True)
     Diesel_level = fields.String(required=True)
     Intrusion = fields.String(required=True)
-    Timestamp = fields.String(required=True)
+    Timestamp = fields.DateTime(required=True)
     Created_at = fields.String(required=True)
     Updated_at = fields.String(required=True)
 
@@ -130,5 +131,34 @@ def create_historicalData():
     db.session.commit()
     result = historicalData.to_json()
     return make_response(jsonify(result),200)
+
+@app.route('/api/v1/getReports',methods= ['GET'])
+def generate_report():
+    info = request.get_json()
+    site_id=info['Site_id']
+    to_date=info['to_date']
+    from_date=info['from_date']
+    sql = text('select * from Historical_Tag_Data where site_id=%s and Timestamp between "%s" and "%s"'%(site_id,str(from_date),str(to_date)))
+    result = db.engine.execute(sql)
+    record = {}
+    reports =[]
+    for data in result:
+        record = {
+            'site_id':data['site_id'],
+            'Temperature':data['Temperature'],
+            'Humidity': data['Humidity'],
+            'Battery_charge':data['Battery_charge'],
+            'Input_voltage': data['Input_voltage'],
+            'Diesel_level':data['Diesel_level'],
+            'Intrusion': data['Intrusion'],
+            'Timestamp':data['Timestamp'],
+            'Created_at': data['Created_at'],
+            'Updated_at':data['Updated_at']
+        }
+        reports.append(record)
+        record={}
+
+    return make_response(jsonify(reports),200)
+
 if __name__ == "__main__":
     app.run(debug=True)
