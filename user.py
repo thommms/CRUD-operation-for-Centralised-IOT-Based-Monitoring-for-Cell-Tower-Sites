@@ -51,6 +51,7 @@ def index():
     get_users = User.query.all()
     user_schema = UserSchema(many=True)
     users = user_schema.dump(get_users)
+    print (users)
     return make_response(jsonify({"users": users}))
 
 
